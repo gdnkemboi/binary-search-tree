@@ -1,4 +1,4 @@
-const HashSet = require("./hashSet.js");
+import mergeSort from "./mergeSort.js";
 
 class Node {
   constructor(data) {
@@ -14,14 +14,13 @@ class Tree {
   }
 
   buildTree(arr) {
-    if (arr.length === 0) {
-      return null;
-    }
+    if (arr.length === 0) return null;
 
-    arr = arr.sort((a, b) => a - b);
-    let arrSet = new HashSet();
-    arrSet.set(arr);
-    arr = arrSet.keys();
+    arr = mergeSort(arr);
+
+    let arrSet = new Set(arr);
+
+    arr = [...arrSet];
 
     let mid = Math.floor(arr.length / 2);
 
@@ -41,19 +40,22 @@ class Tree {
       return root;
     }
 
-    if (data < root.data) {
+    if (data <= root.data) {
       if (root.left === null) {
         root.left = new Node(data);
       } else {
         this.insertNode(root.left, data);
       }
-    } else if (data > root.data) {
+    }
+
+    if (data > root.data) {
       if (root.right === null) {
         root.right = new Node(data);
       } else {
         this.insertNode(root.right, data);
       }
     }
+
     return root;
   }
 
@@ -62,49 +64,39 @@ class Tree {
   }
 
   deleteNode(root, data) {
-    if (root === null) {
-      return root;
-    }
+    if (root === null) return root;
 
     if (data < root.data) {
       root.left = this.deleteNode(root.left, data);
-      return root;
     } else if (data > root.data) {
       root.right = this.deleteNode(root.right, data);
-      return root;
-    }
-
-    if (root.left === null && root.right === null) {
-      root = null;
-      return root;
-    } else if (root.left === null) {
-      let temp = root.right;
-      root = null;
-      return temp;
-    } else if (root.right === null) {
-      let temp = root.left;
-      root = null;
-      return temp;
     } else {
-      let successorParent = root;
-
-      let successor = root.right;
-      while (successor.left !== null) {
-        successorParent = successor;
-        successor = successor.left;
-      }
-
-      if (successorParent !== root) {
-        successorParent.left = successor.right;
+      if (root.left === null && root.right === null) {
+        root = null;
+      } else if (root.left === null) {
+        root = root.right;
+      } else if (root.right === null) {
+        root = root.left;
       } else {
-        successorParent.right = successor.right;
+        let successorParent = root;
+
+        let successor = root.right;
+        while (successor.left !== null) {
+          successorParent = successor;
+          successor = successor.left;
+        }
+
+        if (successorParent !== root) {
+          successorParent.left = successor.right;
+        } else {
+          successorParent.right = successor.right;
+        }
+
+        root.data = successor.data;
       }
-
-      root.data = successor.data;
-
-      successor = null;
-      return root;
     }
+
+    return root;
   }
 
   find(data) {
@@ -113,106 +105,109 @@ class Tree {
 
   findNode(root, data) {
     if (root === null) {
-      return false;
+      return null;
     }
 
     let currentNode = root;
+
     if (data < root.data) {
       currentNode = root.left;
       return this.findNode(root.left, data);
     } else if (data > root.data) {
       currentNode = root.right;
       return this.findNode(root.right, data);
-    } else {
-      return currentNode;
     }
+
+    return currentNode;
   }
 
   levelOrder(callback) {
+    if (!callback) {
+      throw new Error("No callback function provided");
+    }
+
     let queue = [];
     queue.push(this.root);
+
     while (queue.length > 0) {
       let current = queue.shift();
+
       if (current.left !== null) {
         queue.push(current.left);
       }
+
       if (current.right !== null) {
         queue.push(current.right);
       }
-      if (callback) {
-        callback(current.data);
-      }
 
-      return queue;
+      callback(current.data);
     }
-  }
-
-  inOrder(callback) {
-    let result = [];
-    let stack = [];
-    let current = this.root;
-    while (current !== null || stack.length > 0) {
-      while (current !== null) {
-        stack.push(current);
-        current = current.left;
-      }
-      current = stack.pop();
-      result.push(current.data);
-      current = current.right;
-    }
-    if (callback) {
-      result.forEach(callback);
-    }
-    return result;
   }
 
   preOrder(callback) {
-    let result = [];
-    let stack = [];
-    stack.push(this.root);
-    while (stack.length > 0) {
-      let current = stack.pop();
-      result.push(current.data);
-      if (current.right !== null) {
-        stack.push(current.right);
-      }
-      if (current.left !== null) {
-        stack.push(current.left);
-      }
+    if (!callback) {
+      throw new Error("No callback function provided");
     }
-    if (callback) {
-      result.forEach(callback);
+
+    const preOrderTraversal = (node) => {
+      if (node === null) {
+        return;
+      }
+
+      callback(node.data);
+
+      preOrderTraversal(node.left);
+
+      preOrderTraversal(node.right);
+    };
+
+    preOrderTraversal(this.root);
+  }
+
+  inOrder(callback) {
+    if (!callback) {
+      throw new Error("No callback function provided");
     }
-    return result;
+
+    const inOrderTraversal = (node) => {
+      if (node === null) {
+        return;
+      }
+
+      inOrderTraversal(node.left);
+      callback(node.data);
+      inOrderTraversal(node.right);
+    };
+
+    inOrderTraversal(this.root);
   }
 
   postOrder(callback) {
-    let result = [];
-    let stack = [];
-    stack.push(this.root);
-    while (stack.length > 0) {
-      let current = stack.pop();
-      result.push(current.data);
-      if (current.left !== null) {
-        stack.push(current.left);
-      }
-      if (current.right !== null) {
-        stack.push(current.right);
-      }
+    if (!callback) {
+      throw new Error("No callback function provided");
     }
-    result = result.reverse();
-    if (callback) {
-      result.forEach(callback);
-    }
-    return result;
+
+    const postOrderTraversal = (node) => {
+      if (node === null) {
+        return;
+      }
+
+      postOrderTraversal(node.left);
+      postOrderTraversal(node.right);
+      callback(node.data);
+    };
+
+    postOrderTraversal(this.root);
   }
 
   height(node) {
     if (node === null) {
       return -1;
     }
+
     let left = this.height(node.left);
     let right = this.height(node.right);
+
     if (left > right) {
       return left + 1;
     } else {
@@ -221,13 +216,13 @@ class Tree {
   }
 
   depth(node) {
-    if (typeof(node) === 'number') {
+    if (typeof node === "number") {
       return this.findDepth(this.root, node, 0);
     }
 
     return this.findDepth(this.root, node.data, 0);
   }
-  
+
   findDepth(node, target, currentDepth = 0) {
     if (node === null) {
       return -1;
@@ -250,22 +245,27 @@ class Tree {
 
     let left = this.height(root.left);
     let right = this.height(root.right);
+
     let diff = Math.abs(left - right);
     if (diff > 1) {
       return false;
     }
 
-    return true
+    return true;
   }
 
   rebalance() {
-    let arr = this.inOrder();
-    this.root = this.buildTree(arr, 0, arr.length - 1);
+    let arr = [];
+    this.inOrder((n) => arr.push(n));
+
+    console.log(arr);
+
+    this.root = this.buildTree(arr);
     return this;
   }
 }
 
-// Visualizes a BST by console.logging the tree in a structured format. 
+// Visualizes a BST by console.logging the tree in a structured format.
 // It expects to receive the root of a tree as the value for the node parameter.
 const prettyPrint = (node, prefix = "", isLeft = true) => {
   if (node === null) {
@@ -280,41 +280,51 @@ const prettyPrint = (node, prefix = "", isLeft = true) => {
   }
 };
 
-
 // drive script testing all methods of the Tree class
 let numbers = [1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324];
 let tree = new Tree(numbers);
 
-console.log('Testing inOrder method:');
-console.log(tree.inOrder());
+prettyPrint(tree.root);
 
-console.log('Testing preOrder method:');
-console.log(tree.preOrder());
+console.log("Testing inOrder method:\n");
+let inOrderNodes = [];
+tree.inOrder((n) => inOrderNodes.push(n));
+console.log(inOrderNodes);
 
-console.log('Testing postOrder method:');
-console.log(tree.postOrder());
+console.log("Testing preOrder method:\n");
+let preOrderNodes = [];
+tree.preOrder((n) => preOrderNodes.push(n));
+console.log(preOrderNodes);
 
-console.log('Testing levelOrder method:');
-console.log(tree.levelOrder());
+console.log("Testing postOrder method:\n");
+let postOrderNodes = [];
+tree.postOrder((n) => postOrderNodes.push(n));
+console.log(postOrderNodes);
 
-console.log('Testing height method:');
+console.log("Testing levelOrder method:\n");
+let levelOrderNodes = [];
+tree.levelOrder((n) => levelOrderNodes.push(n));
+console.log(levelOrderNodes);
+
+console.log("Testing height method:\n");
 console.log(tree.height(tree.root));
 
-console.log('Testing depth method:');
-console.log(tree.depth(tree.root));
+console.log("Testing depth method:\n");
+console.log(tree.depth(1));
 
-console.log('Testing find method:');
+console.log("Testing find method:\n");
 console.log(tree.find(23));
 console.log(tree.find(6345));
-console.log(tree.find(100));  // This should return null as 100 is not in the tree
+console.log(tree.find(100)); // This should return null as 100 is not in the tree
 
-console.log('Testing delete method:');
-tree.delete(23);  // Delete a node and then check if it's still in the tree
-console.log(tree.find(23));  // This should return null
+console.log("Testing delete method:\n");
+tree.delete(8);
+prettyPrint(tree.root);
+console.log(tree.find(8)); // This should return null
 
-console.log('Testing isBalanced method:');
+console.log("Testing isBalanced method:");
 console.log(tree.isBalanced(tree.root));
 
-console.log('Testing rebalance method:');
+console.log("Testing rebalance method:");
 tree.rebalance();
-console.log(tree.isBalanced(tree.root));  // This should return true after rebalancing
+console.log(tree.isBalanced(tree.root)); // This should return true after rebalancing
